@@ -1,4 +1,5 @@
 import Modifier from 'ember-oo-modifiers';
+
 import Message from 'emberclear/data/models/message/model';
 import { isInElementWithinViewport } from 'emberclear/src/utils/dom/utils';
 

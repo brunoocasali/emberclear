@@ -8,7 +8,7 @@
         class='input is-large'
         value={{this.searchText}}
         placeholder={{t 'ui.search.title'}}
-        {{on 'input' this.onInput}}
+        {{on 'input' this.onInpnt}}
         {{did-insert this.submitSearch}}
         {{did-insert this.focusInput}}
       >
@@ -24,7 +24,7 @@
     {{else}}
       <h5 class='is-size-7 is-uppercase'>{{t 'ui.search.contacts'}}</h5>
 
-      {{#each this.currentUser.esults as |identity|}}
+      {{#each this.contactResults as |identity|}}
         <div tablist>
           <Result @to='chat.privately-with' @id={{identity.uid}} @afterSelect={{action @close}}>
             <span>

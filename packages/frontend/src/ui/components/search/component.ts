@@ -44,12 +44,10 @@ export default class SearchModal extends Component<IArgs> {
   @(task(function*(this: SearchModal, searchTerm: string) {
     const term = new RegExp(searchTerm, 'i');
 
-    const contactResults = yield this.store.query('contact', {
-      name: term,
-    });
-    const channelResults = yield this.store.query('channel', {
-      name: term,
-    });
+    const [contactResults, channelResults] = yield Promise.all([
+      this.store.query('contact', { name: term }),
+      this.store.query('channel', { name: term }),
+    ]);
 
     this.contactResults = contactResults.filter((i: Contact) => i.id !== 'me').slice(0, 5);
 

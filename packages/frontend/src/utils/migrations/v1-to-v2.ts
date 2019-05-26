@@ -71,7 +71,7 @@ async function migrateMessages(appInstance: ApplicationInstance) {
 
   ids.forEach(id => {
     const oldRecord = messages[id];
-    const isTheUser = id === 'me';
+    const isTheUser = oldRecord.sender === 'me';
 
     storage.message.records[id] = {
       data: {

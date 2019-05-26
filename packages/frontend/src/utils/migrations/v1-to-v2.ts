@@ -8,7 +8,7 @@ import ApplicationSerializer from 'emberclear/src/data/models/application/serial
 export async function up(appInstance: ApplicationInstance) {
   const { storage, storedModels } = await loadData(appInstance);
   const isMigrated = isAlreadyMigrated(storedModels, storage);
-  //
+
   // second, load all the data
   if (isMigrated) {
     console.log('Migration not needed');
@@ -53,8 +53,8 @@ async function loadData(appInstance: ApplicationInstance) {
   return { storedModels, storage };
 }
 
-async function isAlreadyMigrated(storedModels: string[], storage: any) {
-  let alreadyMigrated = true;
+function isAlreadyMigrated(storedModels: string[], storage: any) {
+  let alreadyMigrated = undefined;
 
   for (let i = 0; i < storedModels.length; i++) {
     let modelName = storedModels[i];
@@ -63,7 +63,7 @@ async function isAlreadyMigrated(storedModels: string[], storage: any) {
     let record = records[ids[0]];
 
     if (record && record.data && record.data.attributes) {
-      alreadyMigrated = true && alreadyMigrated;
+      alreadyMigrated = true && (alreadyMigrated === undefined ? true : alreadyMigrated);
     } else {
       alreadyMigrated = false;
     }

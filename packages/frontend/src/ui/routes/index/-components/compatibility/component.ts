@@ -37,7 +37,7 @@ export default class Compatibility extends Component {
     let check = this.checkSuccess.bind(this);
     if (!Ember.testing) {
       this.hasIndexedDb = check(yield hasIndexedDb());
-      // this.hasWASM = check(hasWASM());
+      this.hasWASM = check(hasWASM());
       this.hasCamera = check(hasCamera());
       this.hasWebWorker = check(hasWebWorker());
       this.hasServiceWorker = check(hasServiceWorker());

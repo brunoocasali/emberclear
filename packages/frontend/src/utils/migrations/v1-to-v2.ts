@@ -94,22 +94,18 @@ async function migrateMessages(appInstance: ApplicationInstance) {
           sender: {
             data: {
               id: oldRecord.sender,
+              type: isTheUser ? 'users' : 'contacts',
             },
           },
-          deliveryConfirmations: { data: [] },
+          deliveryConfirmations: {
+            data: (oldRecord.deliveryConfirmations || []).map((confirmation: string) => ({
+              type: 'messages',
+              id: confirmation,
+            })),
+          },
         },
       },
     };
-
-    if (isTheUser) {
-      storage.message.records[id].data.relationships.sender.data.type = 'users';
-    } else {
-      storage.message.records[id].data.relationships.sender.data.type = 'contacts';
-    }
-
-    storage.message.records[id].data.relationships.deliveryConfirmations.data = (
-      oldRecord.deliveryConfirmations || []
-    ).map((confirmation: string) => ({ type: 'deliveryConfirmation', id: confirmation }));
   });
 
   await updateStorage(appInstance, storage);

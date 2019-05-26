@@ -72,6 +72,8 @@ async function migrateEverythingElse(appInstance: ApplicationInstance) {
       };
     });
   }
+
+  await updateStorage(appInstance, storage);
 }
 
 async function migrateMessages(appInstance: ApplicationInstance) {
@@ -81,14 +83,34 @@ async function migrateMessages(appInstance: ApplicationInstance) {
 
   ids.forEach(id => {
     const oldRecord = messages[id];
-    const sender = oldRecord.data.relationships.sender;
-    const isTheUser = sender.data.id === 'me';
+    const isTheUser = id === 'me';
+
+    storage.message.records[id] = {
+      data: {
+        id,
+        attributes: {
+          ...oldRecord,
+        },
+        relationships: {
+          sender: {
+            data: {
+              id: oldRecord.sender,
+            },
+          },
+          deliveryConfirmations: { data: [] },
+        },
+      },
+    };
 
     if (isTheUser) {
       storage.message.records[id].data.relationships.sender.data.type = 'users';
     } else {
       storage.message.records[id].data.relationships.sender.data.type = 'contacts';
     }
+
+    storage.message.records[id].data.relationships.deliveryConfirmations.data = (
+      oldRecord.deliveryConfirmations || []
+    ).map((confirmation: string) => ({ type: 'deliveryConfirmation', id: confirmation }));
   });
 
   await updateStorage(appInstance, storage);
@@ -146,6 +168,9 @@ async function loadData(appInstance: ApplicationInstance) {
 }
 
 function isAlreadyMigrated(storedModels: string[], storage: any) {
+  if (!storage) {
+    return true;
+  }
   let alreadyMigrated = undefined;
 
   for (let i = 0; i < storedModels.length; i++) {

@@ -5,6 +5,18 @@ import LFSerializer from 'ember-localforage-adapter/serializers/localforage';
 import ApplicationAdapter from 'emberclear/src/data/models/application/adapter';
 import ApplicationSerializer from 'emberclear/src/data/models/application/serializer';
 
+/**
+ *
+ * Migrations:
+ *   identities split to user and contacts
+ *   - user is the actual user of the app
+ *   message relationships were not polymorphic before, and now
+ *   will need the sender relationship updated
+ *
+ *   All other models don't have relationships, so they can just
+ *   be resaved.
+ *
+ */
 export async function up(appInstance: ApplicationInstance) {
   const { storage, storedModels } = await loadData(appInstance);
   const isMigrated = isAlreadyMigrated(storedModels, storage);
@@ -87,7 +99,51 @@ async function saveRecords(appInstance: ApplicationInstance, storedModels: strin
   appInstance.register('serializer:application', ApplicationSerializer);
   appInstance.register('adapter:application', ApplicationAdapter);
 
-  store = appInstance.lookup('service:store');
+  await migrateIdentities(appInstance);
+  await migrateMessages(appInstance);
+  await migrateEverythingElse(appInstance, storedModels);
+}
+
+async function migrateMessages(appInstance: ApplicationInstance) {
+  let store = appInstance.lookup('service:store');
+
+  let eRecords = await store.peekAll('message');
+  let records = eRecords.toArray();
+
+  for (let j = 0; j < records.length; j++) {
+    let record = records[j];
+
+    record.store._adapterCache['message'] = appInstance.lookup('adapter:application');
+    record.store._serializerCache['message'] = appInstance.lookup('serializer:application');
+    record.set('hasDirtyAttributes', true);
+
+    await record.save();
+  }
+}
+
+async function migrateEverythingElse(appInstance: ApplicationInstance, storedModels: string[]) {
+  let store = appInstance.lookup('service:store');
+
+  for (let i = 0; i < storedModels.length; i++) {
+    let modelName = storedModels[i];
+
+    let eRecords = await store.peekAll(modelName);
+    let records = eRecords.toArray();
+
+    for (let j = 0; j < records.length; j++) {
+      let record = records[j];
+
+      record.store._adapterCache[modelName] = appInstance.lookup('adapter:application');
+      record.store._serializerCache[modelName] = appInstance.lookup('serializer:application');
+      record.set('hasDirtyAttributes', true);
+
+      await record.save();
+    }
+  }
+}
+
+async function migrateIdentities(appInstance: ApplicationInstance) {
+  let store = appInstance.lookup('service:store');
 
   store._adapterCache['user'] = appInstance.lookup('adapter:application');
   store._serializerCache['user'] = appInstance.lookup('serializer:application');
@@ -102,37 +158,27 @@ async function saveRecords(appInstance: ApplicationInstance, storedModels: strin
       name: user.name,
     })
     .save();
+  let eRecords = await store.peekAll('identities');
+  let records = eRecords.toArray();
 
-  // finally, save all the data
-  for (let i = 0; i < storedModels.length; i++) {
-    let modelName = storedModels[i];
+  for (let j = 0; j < records.length; j++) {
+    let record = records[j];
 
-    let eRecords = await store.peekAll(modelName);
-    let records = eRecords.toArray();
+    if (record.id === 'me') continue;
 
-    for (let j = 0; j < records.length; j++) {
-      let record = records[j];
+    record = store.createRecord('contact', {
+      id: record.id,
+      name: record.name,
+      publicKey: record.publicKey,
+      onlineStatus: record.onlineStatus,
+    });
 
-      if (record.id === 'me') continue;
+    record.store._adapterCache['contact'] = appInstance.lookup('adapter:application');
+    record.store._serializerCache['contact'] = appInstance.lookup('serializer:application');
 
-      if (modelName === 'identity') {
-        modelName = 'contact';
+    record.set('hasDirtyAttributes', true);
 
-        record = store.createRecord('contact', {
-          id: record.id,
-          name: record.name,
-          publicKey: record.publicKey,
-          onlineStatus: record.onlineStatus,
-        });
-      }
-
-      record.store._adapterCache[modelName] = appInstance.lookup('adapter:application');
-      record.store._serializerCache[modelName] = appInstance.lookup('serializer:application');
-      // debugger;
-      // record.set('id', record.id);
-      record.set('hasDirtyAttributes', true);
-
-      await record.save();
-    }
+    await record.save();
   }
 }
+

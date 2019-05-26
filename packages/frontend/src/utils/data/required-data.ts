@@ -1,5 +1,7 @@
 import Ember from 'ember';
 import Relay from 'emberclear/data/models/relay';
+import ApplicationInstance from '@ember/application/instance';
+
 export const defaultRelays = [
   {
     socket: 'wss://mesh-relay-in-us-1.herokuapp.com/socket',
@@ -18,7 +20,7 @@ export const defaultRelays = [
   },
 ];
 
-export async function initialize(applicationInstance: any) {
+export async function ensureRelays(applicationInstance: ApplicationInstance) {
   if (Ember.testing) return;
 
   const store = applicationInstance.lookup('service:store');
@@ -39,5 +41,3 @@ export async function initialize(applicationInstance: any) {
     })
   );
 }
-
-export default { initialize };

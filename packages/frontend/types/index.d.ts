@@ -22,6 +22,16 @@ declare module '@ember/service' {
   }
 }
 
+declare module 'ember-localforage-adapter/adapters/localforage' {
+  const adapter: any;
+  export default adapter;
+}
+
+declare module 'ember-localforage-adapter/serializers/localforage' {
+  const serializer: any;
+  export default serializer;
+}
+
 declare global {
   interface Assert {
     contains: (source?: string | null, sub?: string, message?: string) => void;

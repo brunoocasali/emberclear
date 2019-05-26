@@ -16,8 +16,7 @@ import ApplicationInstance from '@ember/application/instance';
  *
  */
 export async function up(appInstance: ApplicationInstance) {
-  const { storage, storedModels } = await loadData(appInstance);
-  const isMigrated = isAlreadyMigrated(storedModels, storage);
+  const isMigrated = await isAlreadyMigrated(appInstance);
 
   // second, load all the data
   if (isMigrated) {
@@ -29,6 +28,19 @@ export async function up(appInstance: ApplicationInstance) {
   await migrateIdentities(appInstance);
   await migrateMessages(appInstance);
   await migrateEverythingElse(appInstance);
+  await finalize(appInstance);
+}
+
+async function finalize(appInstance: ApplicationInstance) {
+  const storage = await getStorage(appInstance);
+
+  // these things haven't been ready, and
+  // shouldn't exist
+  delete storage.channel;
+  delete storage.invitation;
+  delete storage.messageMedia;
+
+  await updateStorage(appInstance, storage);
 }
 
 async function getStorage(appInstance: ApplicationInstance) {
@@ -88,8 +100,19 @@ async function migrateMessages(appInstance: ApplicationInstance) {
     storage.message.records[id] = {
       data: {
         id,
+        type: 'messages',
         attributes: {
-          ...oldRecord,
+          from: oldRecord.from,
+          to: oldRecord.to,
+          body: oldRecord.body,
+          metadata: oldRecord.metadata,
+          type: oldRecord.type,
+          target: oldRecord.target,
+          thread: oldRecord.thread,
+          receivedAt: oldRecord.receivedAt,
+          sentAt: oldRecord.sentAt,
+          sendError: oldRecord.sendError,
+          queueForResend: oldRecord.queueForResend,
         },
         relationships: {
           sender: {
@@ -132,11 +155,13 @@ async function migrateIdentities(appInstance: ApplicationInstance) {
       storage.user.records[id] = {
         data: {
           id,
+          type: 'users',
           attributes: {
             name: oldRecord.name,
             publicKey: oldRecord.publicKey,
             privateKey: oldRecord.privateKey,
           },
+          // user has no relationships (currently)
           relationships: {},
         },
       };
@@ -144,6 +169,7 @@ async function migrateIdentities(appInstance: ApplicationInstance) {
       storage.contact.records[id] = {
         data: {
           id,
+          type: 'contacts',
           attributes: {
             name: oldRecord.name,
             publicKey: oldRecord.publicKey,
@@ -160,19 +186,17 @@ async function migrateIdentities(appInstance: ApplicationInstance) {
   await updateStorage(appInstance, storage);
 }
 
-async function loadData(appInstance: ApplicationInstance) {
-  const storage = getStorage(appInstance);
-  const storedModels = Object.keys(storage);
+async function isAlreadyMigrated(appInstance: ApplicationInstance) {
+  const storage = await getStorage(appInstance);
 
-  return { storedModels, storage };
-}
-
-function isAlreadyMigrated(storedModels: string[], storage: any) {
   if (!storage) {
     return true;
   }
+
+  const storedModels = Object.keys(storage);
   let alreadyMigrated = undefined;
 
+  // Are partial migrations a thing?
   for (let i = 0; i < storedModels.length; i++) {
     let modelName = storedModels[i];
     let records = storage[modelName].records;

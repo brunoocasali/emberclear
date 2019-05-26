@@ -1,10 +1,5 @@
 import ApplicationInstance from '@ember/application/instance';
 
-import LFAdapter from 'ember-localforage-adapter/adapters/localforage';
-import LFSerializer from 'ember-localforage-adapter/serializers/localforage';
-import ApplicationAdapter from 'emberclear/src/data/models/application/adapter';
-import ApplicationSerializer from 'emberclear/src/data/models/application/serializer';
-
 /**
  *
  * Migrations:
@@ -31,28 +26,62 @@ export async function up(appInstance: ApplicationInstance) {
   }
 
   console.log('migration needed. Converting old data to { json:api } format');
-  stubOldAdapters(appInstance);
-  await saveRecords(appInstance, storedModels);
-  await cleanUpRemainingDataAndRelationships(appInstance);
+  await migrateIdentities(appInstance);
+  await migrateMessages(appInstance);
+  await migrateEverythingElse(appInstance);
 }
 
-async function cleanUpRemainingDataAndRelationships(appInstance: ApplicationInstance) {
-  let store = appInstance.lookup('service:store');
+async function getStorage(appInstance: ApplicationInstance) {
   let adapter = appInstance.lookup('adapter:application');
   let namespace = adapter._adapterNamespace();
 
   let storage = await (window as any).localforage.getItem(namespace);
 
-  delete storage.identity;
+  return storage;
+}
 
+async function updateStorage(appInstance: ApplicationInstance, newValue: any) {
+  let adapter = appInstance.lookup('adapter:application');
+  let namespace = adapter._adapterNamespace();
+
+  await (window as any).localforage.setItem(namespace, newValue);
+}
+
+async function migrateEverythingElse(appInstance: ApplicationInstance) {
+  const storage = await getStorage(appInstance);
+  const remaining = Object.keys(storage);
+
+  for (let i = 0; i < remaining.length; i++) {
+    const activeModel = remaining[i];
+    const records = (storage[activeModel] || {}).records || {};
+    const ids = Object.keys(records);
+
+    ids.forEach(id => {
+      const oldRecord = records[id];
+
+      storage[activeModel][id] = {
+        data: {
+          id,
+          attributes: {
+            ...oldRecord,
+          },
+          relationships: {
+            // how to get these?
+          },
+        },
+      };
+    });
+  }
+}
+
+async function migrateMessages(appInstance: ApplicationInstance) {
+  const storage = await getStorage(appInstance);
   const messages = (storage.message || {}).records || {};
   const ids = Object.keys(messages);
 
   ids.forEach(id => {
-    const record = messages[id];
-
-    const sender = record.data.relationships.sender;
-
+    const oldRecord = messages[id];
+    const sender = oldRecord.data.relationships.sender;
     const isTheUser = sender.data.id === 'me';
 
     if (isTheUser) {
@@ -62,38 +91,56 @@ async function cleanUpRemainingDataAndRelationships(appInstance: ApplicationInst
     }
   });
 
-  store.unloadAll();
+  await updateStorage(appInstance, storage);
 }
 
-function stubOldAdapters(appInstance: ApplicationInstance) {
-  appInstance.unregister('serializer:application');
-  appInstance.unregister('adapter:application');
-  appInstance.register('serializer:application', LFSerializer);
-  appInstance.register(
-    'adapter:application',
-    LFAdapter.extend({
-      caching: 'none',
+async function migrateIdentities(appInstance: ApplicationInstance) {
+  const storage = await getStorage(appInstance);
 
-      shouldBackgroundReloadRecord() {
-        return true;
-      },
+  storage.user = { records: {} };
+  storage.contact = { records: {} };
 
-      shouldBackgroundReloadAll() {
-        return true;
-      },
-    })
-  );
+  const identities = (storage.identity || {}).records || {};
+  const ids = Object.keys(identities);
+
+  ids.forEach(id => {
+    const oldRecord = identities[id];
+
+    if (id === 'me') {
+      storage.user.records[id] = {
+        data: {
+          id,
+          attributes: {
+            name: oldRecord.name,
+            publicKey: oldRecord.publicKey,
+            privateKey: oldRecord.privateKey,
+          },
+          relationships: {},
+        },
+      };
+    } else {
+      storage.contact.records[id] = {
+        data: {
+          id,
+          attributes: {
+            name: oldRecord.name,
+            publicKey: oldRecord.publicKey,
+            onlineStatus: oldRecord.onlineStatus,
+          },
+          relationships: {},
+        },
+      };
+    }
+  });
+
+  delete storage.identity;
+
+  await updateStorage(appInstance, storage);
 }
 
 async function loadData(appInstance: ApplicationInstance) {
-  let adapter = appInstance.lookup('adapter:application');
-  let namespace = adapter._adapterNamespace();
-
-  let storage = await (window as any).localforage.getItem(namespace);
-
-  // do we even need to do migrations?
-
-  let storedModels = Object.keys(storage);
+  const storage = getStorage(appInstance);
+  const storedModels = Object.keys(storage);
 
   return { storedModels, storage };
 }
@@ -115,102 +162,4 @@ function isAlreadyMigrated(storedModels: string[], storage: any) {
   }
 
   return alreadyMigrated;
-}
-
-async function saveRecords(appInstance: ApplicationInstance, storedModels: string[]) {
-  let store = appInstance.lookup('service:store');
-
-  for (let i = 0; i < storedModels.length; i++) {
-    let modelName = storedModels[i];
-
-    await store.findAll(modelName);
-  }
-
-  // third, swap out the adapter/serializer with the new ones
-  appInstance.unregister('serializer:application');
-  appInstance.unregister('adapter:application');
-  appInstance.register('serializer:application', ApplicationSerializer);
-  appInstance.register('adapter:application', ApplicationAdapter);
-
-  await migrateIdentities(appInstance);
-  await migrateMessages(appInstance);
-  await migrateEverythingElse(appInstance, storedModels);
-}
-
-async function migrateMessages(appInstance: ApplicationInstance) {
-  let store = appInstance.lookup('service:store');
-
-  let eRecords = await store.peekAll('message');
-  let records = eRecords.toArray();
-
-  for (let j = 0; j < records.length; j++) {
-    let record = records[j];
-
-    record.store._adapterCache['message'] = appInstance.lookup('adapter:application');
-    record.store._serializerCache['message'] = appInstance.lookup('serializer:application');
-    record.set('hasDirtyAttributes', true);
-
-    await record.save();
-  }
-}
-
-async function migrateEverythingElse(appInstance: ApplicationInstance, storedModels: string[]) {
-  let store = appInstance.lookup('service:store');
-
-  for (let i = 0; i < storedModels.length; i++) {
-    let modelName = storedModels[i];
-
-    let eRecords = await store.peekAll(modelName);
-    let records = eRecords.toArray();
-
-    for (let j = 0; j < records.length; j++) {
-      let record = records[j];
-
-      record.store._adapterCache[modelName] = appInstance.lookup('adapter:application');
-      record.store._serializerCache[modelName] = appInstance.lookup('serializer:application');
-      record.set('hasDirtyAttributes', true);
-
-      await record.save();
-    }
-  }
-}
-
-async function migrateIdentities(appInstance: ApplicationInstance) {
-  let store = appInstance.lookup('service:store');
-
-  store._adapterCache['user'] = appInstance.lookup('adapter:application');
-  store._serializerCache['user'] = appInstance.lookup('serializer:application');
-
-  const user = store.peekRecord('identity', 'me');
-
-  await store
-    .createRecord('user', {
-      id: 'me',
-      privateKey: user.privateKey,
-      publicKey: user.publicKey,
-      name: user.name,
-    })
-    .save();
-  let eRecords = await store.peekAll('identities');
-  let records = eRecords.toArray();
-
-  for (let j = 0; j < records.length; j++) {
-    let record = records[j];
-
-    if (record.id === 'me') continue;
-
-    record = store.createRecord('contact', {
-      id: record.id,
-      name: record.name,
-      publicKey: record.publicKey,
-      onlineStatus: record.onlineStatus,
-    });
-
-    record.store._adapterCache['contact'] = appInstance.lookup('adapter:application');
-    record.store._serializerCache['contact'] = appInstance.lookup('serializer:application');
-
-    record.set('hasDirtyAttributes', true);
-
-    await record.save();
-  }
 }

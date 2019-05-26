@@ -49,7 +49,6 @@ export default DS.Adapter.extend(Evented, {
    */
   findRecord(store, type, id) {
     return this._getNamespaceData(type).then((namespaceData) => {
-      console.log('findRecord', type, id, namespaceData);
       const record = namespaceData.records[id];
 
       if (!record) {
@@ -68,7 +67,6 @@ export default DS.Adapter.extend(Evented, {
         records.push(namespaceData.records[id]);
       }
 
-      console.log(records);
       return { data: records.map(record => record.data) };
     });
   },
@@ -235,14 +233,10 @@ export default DS.Adapter.extend(Evented, {
 });
 
 function updateOrCreate(store, type, snapshot) {
-  // console.log('updting..???', snapshot);
   return this.queue.attach((resolve) => {
     this._getNamespaceData(type).then((namespaceData) => {
-      // console.log('namespaceData', namespaceData);
       const serializer = store.serializerFor(type.modelName);
-      // console.log('snapshot', snapshot);
       const recordHash = serializer.serialize(snapshot, {includeId: true});
-      // console.log('generated record hash', recordHash);
       // update(id comes from snapshot) or create(id comes from serialization)
       const id = snapshot.id || recordHash.id;
 

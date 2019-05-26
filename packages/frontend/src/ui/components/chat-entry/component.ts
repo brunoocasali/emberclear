@@ -53,9 +53,6 @@ export default class ChatEntry extends Component<IArgs> {
     once(this, () => {
       this.isDisabled = false;
       this.text = '';
-      once(this, () => {
-        element.focus();
-      });
     });
   }
 

@@ -61,9 +61,9 @@ export default class ChatEntry extends Component<IArgs> {
       this.text = '';
 
       // this feels hacky :-\
-      later(this, () => {
+      later(() => {
         this.textarea.focus();
-      });
+      }, 1);
     });
   }
 

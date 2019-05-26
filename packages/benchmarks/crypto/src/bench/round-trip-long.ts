@@ -26,8 +26,10 @@ Integer tempus lobortis metus, eu vulputate leo fermentum id. Praesent ut velit 
 
 Proin varius mi augue, sed auctor eros sagittis sed. Phasellus vehicula ex ut venenatis sagittis. Vivamus volutpat euismod lorem. Aliquam tempor quam orci. Cras ut nulla metus. Donec tempor, leo a tempor venenatis, enim ipsum aliquam tellus, id faucibus turpis magna quis ante. Ut sit amet volutpat nisl, at venenatis tellus. Praesent auctor ut risus at accumsan. Vestibulum venenatis viverra tristique. Duis a velit ornare, ultricies ipsum eu, vehicula felis. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec et purus consequat, fringilla augue ut, rhoncus nisi. Duis semper metus nunc, non egestas tellus semper et. Suspendisse congue tempus nunc, id vulputate neque consectetur in. Pellentesque rhoncus, justo at dignissim feugiat, ex ligula gravida lacus, ut varius augue libero eget ante.
 `;
-
-const msg = fromString(lorem);
+console.log(lorem.length);
+const msg = fromString(
+  `${lorem}`
+);
 
 
 export const roundTrip = new Suite({

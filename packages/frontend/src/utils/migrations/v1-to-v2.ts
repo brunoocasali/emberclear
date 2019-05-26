@@ -16,6 +16,9 @@ import ApplicationSerializer from 'emberclear/src/data/models/application/serial
  *   All other models don't have relationships, so they can just
  *   be resaved.
  *
+ *
+ *   NOTE: how long should this migration be kept? this'll be just be bloat after it runs.
+ *
  */
 export async function up(appInstance: ApplicationInstance) {
   const { storage, storedModels } = await loadData(appInstance);
@@ -30,6 +33,36 @@ export async function up(appInstance: ApplicationInstance) {
   console.log('migration needed. Converting old data to { json:api } format');
   stubOldAdapters(appInstance);
   await saveRecords(appInstance, storedModels);
+  await cleanUpRemainingDataAndRelationships(appInstance);
+}
+
+async function cleanUpRemainingDataAndRelationships(appInstance: ApplicationInstance) {
+  let store = appInstance.lookup('service:store');
+  let adapter = appInstance.lookup('adapter:application');
+  let namespace = adapter._adapterNamespace();
+
+  let storage = await (window as any).localforage.getItem(namespace);
+
+  delete storage.identity;
+
+  const messages = (storage.message || {}).records || {};
+  const ids = Object.keys(messages);
+
+  ids.forEach(id => {
+    const record = messages[id];
+
+    const sender = record.data.relationships.sender;
+
+    const isTheUser = sender.data.id === 'me';
+
+    if (isTheUser) {
+      storage.message.records[id].data.relationships.sender.data.type = 'users';
+    } else {
+      storage.message.records[id].data.relationships.sender.data.type = 'contacts';
+    }
+  });
+
+  store.unloadAll();
 }
 
 function stubOldAdapters(appInstance: ApplicationInstance) {
@@ -181,4 +214,3 @@ async function migrateIdentities(appInstance: ApplicationInstance) {
     await record.save();
   }
 }
-

@@ -27,7 +27,6 @@ export async function up(appInstance: ApplicationInstance) {
   console.log('migration needed. Converting old data to { json:api } format');
   await migrateIdentities(appInstance);
   await migrateMessages(appInstance);
-  await migrateEverythingElse(appInstance);
   await finalize(appInstance);
 }
 
@@ -39,6 +38,12 @@ async function finalize(appInstance: ApplicationInstance) {
   delete storage.channel;
   delete storage.invitation;
   delete storage.messageMedia;
+
+  // these are old data
+  delete storage.identity;
+
+  // these will be re-generated
+  delete storage.relay;
 
   await updateStorage(appInstance, storage);
 }
@@ -57,35 +62,6 @@ async function updateStorage(appInstance: ApplicationInstance, newValue: any) {
   let namespace = adapter._adapterNamespace();
 
   await (window as any).localforage.setItem(namespace, newValue);
-}
-
-async function migrateEverythingElse(appInstance: ApplicationInstance) {
-  const storage = await getStorage(appInstance);
-  const remaining = Object.keys(storage);
-
-  for (let i = 0; i < remaining.length; i++) {
-    const activeModel = remaining[i];
-    const records = (storage[activeModel] || {}).records || {};
-    const ids = Object.keys(records);
-
-    ids.forEach(id => {
-      const oldRecord = records[id];
-
-      storage[activeModel][id] = {
-        data: {
-          id,
-          attributes: {
-            ...oldRecord,
-          },
-          relationships: {
-            // how to get these?
-          },
-        },
-      };
-    });
-  }
-
-  await updateStorage(appInstance, storage);
 }
 
 async function migrateMessages(appInstance: ApplicationInstance) {
@@ -180,8 +156,6 @@ async function migrateIdentities(appInstance: ApplicationInstance) {
       };
     }
   });
-
-  delete storage.identity;
 
   await updateStorage(appInstance, storage);
 }

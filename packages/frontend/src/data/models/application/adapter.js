@@ -68,6 +68,7 @@ export default DS.Adapter.extend(Evented, {
         records.push(namespaceData.records[id]);
       }
 
+      console.log(records);
       return { data: records.map(record => record.data) };
     });
   },

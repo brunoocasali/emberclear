@@ -41,7 +41,7 @@ export default class ChatEntry extends Component<IArgs> {
     return !this.text || this.text.length === 0 || this.isDisabled;
   }
 
-  @action async sendMessage(element: HTMLTextAreaElement) {
+  @action async sendMessage() {
     if (!this.text) return;
 
     this.isDisabled = true;
@@ -61,7 +61,7 @@ export default class ChatEntry extends Component<IArgs> {
 
     // don't submit when shift is being held.
     if (!shiftKey && keyCode === 13) {
-      this.sendMessage(event.target as any);
+      this.sendMessage();
 
       // prevent regular 'Enter' from inserting a linebreak
       return false;

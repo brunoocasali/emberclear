@@ -1,5 +1,4 @@
 stages:
-  - setup
   - quality
   - test
   - build

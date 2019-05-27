@@ -1,4 +1,4 @@
-import { module, skip } from 'qunit';
+import { module, test } from 'qunit';
 import { visit, find } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
 
@@ -24,7 +24,7 @@ module('Acceptance | Compatibility', function(hooks) {
       await visit('/');
     });
 
-    skip('the compatibility message is not shown', function(assert) {
+    test('the compatibility message is not shown', function(assert) {
       let modal = find('[data-test-compatibility-modal]');
 
       assert.notOk(modal, 'the modal should not be in the dom');
@@ -32,12 +32,17 @@ module('Acceptance | Compatibility', function(hooks) {
   });
 
   module('the browser does not support a required feature', function(hooks) {
+    let backupDb: any;
     hooks.beforeEach(async function() {
-      delete window.Notification;
+      backupDb = window.indexedDB;
+      delete (window as any).indexedDB;
       await visit('/');
     });
+    hooks.afterEach(function() {
+      (window as any).indexedDB = backupDb;
+    });
 
-    skip('the compatibility message is shown', function(assert) {
+    test('the compatibility message is shown', function(assert) {
       let modal = find('[data-test-compatibility-modal]');
 
       assert.ok(modal, 'the modal should be in the dom');

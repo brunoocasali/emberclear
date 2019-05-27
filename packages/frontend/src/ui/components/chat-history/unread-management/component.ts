@@ -61,13 +61,6 @@ export default class UnreadManagement extends Component<IArgs> {
     if (this.firstUnreadMessage) {
       const firstUnread = document.getElementById(this.firstUnreadMessage.id)!;
 
-      assert(
-        `[scrollToFirstUnread] Attempted to scroll to message that does not exist: ${
-          this.firstUnreadMessage.id
-        }. It may not actually be rendered in the dom.`,
-        !!firstUnread
-      );
-
       scrollIntoViewOfParent(this.messagesElement, firstUnread);
     }
   }

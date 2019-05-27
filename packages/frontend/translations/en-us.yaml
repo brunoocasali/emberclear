@@ -128,7 +128,7 @@ ui:
     title: emberclear message
     from: message from {name}
     prompt:
-      title: emberclear needs your permission to enable notifications.
+      title: emberclear needs your permission to enable chat notifications.
       enable: Enable Notifications
       askLater: Ask Next Time
       neverAsk: Never Ask Again

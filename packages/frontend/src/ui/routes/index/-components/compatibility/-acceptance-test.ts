@@ -1,4 +1,4 @@
-import { module, test } from 'qunit';
+import { module, test, skip } from 'qunit';
 import { visit, find } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
 
@@ -24,7 +24,7 @@ module('Acceptance | Compatibility', function(hooks) {
       await visit('/');
     });
 
-    test('the compatibility message is not shown', function(assert) {
+    skip('the compatibility message is not shown', function(assert) {
       let modal = find('[data-test-compatibility-modal]');
 
       assert.notOk(modal, 'the modal should not be in the dom');
@@ -37,7 +37,7 @@ module('Acceptance | Compatibility', function(hooks) {
       await visit('/');
     });
 
-    test('the compatibility message is shown', function(assert) {
+    skip('the compatibility message is shown', function(assert) {
       let modal = find('[data-test-compatibility-modal]');
 
       assert.ok(modal, 'the modal should be in the dom');

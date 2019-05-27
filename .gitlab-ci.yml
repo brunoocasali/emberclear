@@ -38,9 +38,8 @@ Security:
     changes:
       - ${FRONTEND}/**/*
   script:
-    - |
-      time npm install -g snyk \
-      && time ( cd ${FRONTEND} && snyk test --severity-threshold=high )
+    - time npm install -g snyk
+    - time ( cd ${FRONTEND} && snyk test --severity-threshold=high )
 
 
 Lint JS/TS:

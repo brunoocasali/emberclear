@@ -1,4 +1,5 @@
 stages:
+  - setup
   - quality
   - test
   - build
@@ -42,30 +43,35 @@ Security via Synk:
 
 Lint JS/TS:
   stage: quality
+  dependencies: [ setup ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:js )
 
 Lint Templates:
   stage: quality
+  dependencies: [ setup ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:hbs )
 
 Lint SCSS:
   stage: quality
+  dependencies: [ setup ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:sass )
 
 Check Types:
   stage: quality
+  dependencies: [ setup ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn tsc )
 
 Translations:
   stage: quality
+  dependencies: [ setup ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:i18n )

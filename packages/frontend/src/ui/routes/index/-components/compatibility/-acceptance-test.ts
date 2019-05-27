@@ -1,4 +1,4 @@
-import { module, test, skip } from 'qunit';
+import { module, skip } from 'qunit';
 import { visit, find } from '@ember/test-helpers';
 import { setupApplicationTest } from 'ember-qunit';
 

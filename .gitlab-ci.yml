@@ -32,7 +32,7 @@ variables:
 before_script:
   - time ( cd ${FRONTEND} && yarn install )
 
-Security via Synk:
+Security:
   stage: setup
   only:
     changes: [ '${FRONTEND}/**/*' ]
@@ -43,35 +43,35 @@ Security via Synk:
 
 Lint JS/TS:
   stage: quality
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:js )
 
 Lint Templates:
   stage: quality
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:hbs )
 
 Lint SCSS:
   stage: quality
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:sass )
 
 Check Types:
   stage: quality
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn tsc )
 
 Translations:
   stage: quality
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:i18n )
@@ -79,7 +79,7 @@ Translations:
 
 Unit Tests:
   stage: test
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script:
@@ -90,7 +90,7 @@ Unit Tests:
 
 Helper Tests:
   stage: test
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script:
@@ -101,7 +101,7 @@ Helper Tests:
 
 Integration Tests:
   stage: test
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script:
@@ -112,7 +112,7 @@ Integration Tests:
 
 Application Tests:
   stage: test
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   script:
@@ -123,7 +123,7 @@ Application Tests:
 
 Application Tests (a11y):
   stage: test
-  dependencies: [ setup ]
+  dependencies: [ Security ]
   only:
     changes: [ '${FRONTEND}/**/*' ]
   # for now -- this is a big task
@@ -151,7 +151,6 @@ Merge Coverage:
 
 Build Production:
   stage: build
-  dependencies: [ setup ]
   only:
     refs: [ master ]
     changes: [ '${FRONTEND}/**/*' ]
@@ -163,7 +162,6 @@ Build Production:
 
 Analyze Bundle:
   stage: build
-  dependencies: [ setup ]
   only:
     refs: [ master ]
     changes: [ '${FRONTEND}/**/*' ]

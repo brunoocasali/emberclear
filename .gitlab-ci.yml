@@ -14,9 +14,7 @@ stages:
 #     - ${CI_PROJECT_DIR}/packages/frontend/node_modules
 
 # need an image that has chrome, and eventually firefox
-# image: node:10
 image: danlynn/ember-cli:latest
-# image: ubuntu:latest
 
 variables:
   YARN_CACHE_FOLDER: ${CI_PROJECT_DIR}/.cache_yarn
@@ -36,7 +34,7 @@ before_script:
 Security via Synk:
   stage: setup
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time npm install -g snyk
     - time ( cd ${FRONTEND} && snyk test --severity-threshold=high )
@@ -45,32 +43,31 @@ Security via Synk:
 Lint JS/TS:
   stage: quality
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:js )
 
 Lint Templates:
   stage: quality
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:hbs )
 
 Lint SCSS:
   stage: quality
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:sass )
 
 Check Types:
   stage: quality
   only:
-    changes:
-      - ${FRONTEND}/**/*
+    changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn tsc )
 
 Translations:
   stage: quality
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script: time ( cd ${FRONTEND} && yarn lint:i18n )
 
 
@@ -78,7 +75,7 @@ Unit Tests:
   stage: test
   dependencies: [ setup ]
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn test:named Unit
   artifacts:
@@ -89,7 +86,7 @@ Helper Tests:
   stage: test
   dependencies: [ setup ]
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn test:named Helper
   artifacts:
@@ -100,7 +97,7 @@ Integration Tests:
   stage: test
   dependencies: [ setup ]
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn test:named Integration
   artifacts:
@@ -111,8 +108,7 @@ Application Tests:
   stage: test
   dependencies: [ setup ]
   only:
-    changes:
-      - ${FRONTEND}/**/*
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - PERCY_ENABLE=1 ./run yarn test:named Acceptance
   artifacts:
@@ -123,7 +119,7 @@ Application Tests (a11y):
   stage: test
   dependencies: [ setup ]
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   # for now -- this is a big task
   allow_failure: true
   script:
@@ -139,7 +135,7 @@ Merge Coverage:
     - Helper Tests
     - Unit Tests
   only:
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn merge-coverage
     - cat ${FRONTEND}/coverage/coverage-summary.json
@@ -152,7 +148,7 @@ Build Production:
   dependencies: [ setup ]
   only:
     refs: [ master ]
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn build:production
   artifacts:
@@ -164,7 +160,7 @@ Analyze Bundle:
   dependencies: [ setup ]
   only:
     refs: [ master ]
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   script:
     - time ./run yarn analyze
   artifacts:
@@ -175,7 +171,7 @@ Deploy Production:
   stage: deploy
   only:
     refs: [ master ]
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   dependencies:
     - Merge Coverage
     - Analyze Bundle
@@ -191,7 +187,7 @@ Deploy Docker Image:
   stage: deploy
   only:
     refs: [ master ]
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   image: docker
   services:
    - docker:dind
@@ -211,7 +207,7 @@ pages:
   stage: deploy
   only:
     refs: [ master ]
-    changes: [ ${FRONTEND}/**/* ]
+    changes: [ '${FRONTEND}/**/*' ]
   dependencies:
     - Merge Coverage
     - Analyze Bundle
@@ -224,12 +220,4 @@ pages:
     paths:
       - public
     expire_in: 30 days
-
-# Setup is currently worthless, because it's faster
-# to install everything at every stage than to rely on cache...
-# setup:
-#   stage: setup
-#   script:
-#     - echo "skip"
-    # - time ./run yarn install
 

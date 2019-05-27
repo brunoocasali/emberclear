@@ -12,6 +12,7 @@ export function hasWASM() {
       }
     }
   } catch (e) {
+    console.error('hasWASM check:', e);
     // deliberately empty
   }
   return false;

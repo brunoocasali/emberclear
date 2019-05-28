@@ -13,6 +13,14 @@ export default class RelayManager extends Service {
   @service store!: StoreService;
   @service relayConnection!: RelayConnection;
 
+  isConnected = false;
+  isConnecting = false;
+  hasError = false;
+
+  // TBD
+  requiredConnectionCount = 1; // TODO: 2
+  hasEnoughConnections = true;
+
   async connect() {
     const relay = await this.getRelay();
 
